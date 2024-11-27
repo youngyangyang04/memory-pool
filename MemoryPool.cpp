@@ -35,12 +35,11 @@ void* MemoryPool::allocate()
     // 优先使用空闲链表中的内存槽
     if (freeList_ != nullptr)
     {
-        Slot* temp;
         {
             std::lock_guard<std::mutex> lock(mutexForFreeList_);
             if (freeList_ != nullptr)
             {
-                temp = freeList_;
+                Slot* temp = freeList_;
                 freeList_ = freeList_->next;
                 return temp;
             }
@@ -96,7 +95,7 @@ void MemoryPool::allocateNewBlock()
 // 让指针对齐到槽大小的倍数位置
 size_t MemoryPool::padPointer(char* p, size_t align)
 {
-    // align 代表槽大小
+    // align 是槽大小
     return (align - reinterpret_cast<size_t>(p)) % align;
 }
 
@@ -108,6 +107,7 @@ void HashBucket::initMemoryPool()
     }
 }   
 
+// 单例模式
 MemoryPool& HashBucket::getMemoryPool(int index)
 {
     static MemoryPool memoryPool[MEMORY_POOL_NUM];

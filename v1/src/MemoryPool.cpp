@@ -1,9 +1,14 @@
-#include "MemoryPool.h"
+#include "../include/MemoryPool.h"
 
 namespace memoryPool 
 {
 MemoryPool::MemoryPool(size_t BlockSize)
     : BlockSize_ (BlockSize)
+    , SlotSize_ (0)
+    , firstBlock_ (nullptr)
+    , curSlot_ (nullptr)
+    , freeList_ (nullptr)
+    , lastSlot_ (nullptr)
 {}
 
 MemoryPool::~MemoryPool()
@@ -33,18 +38,21 @@ void MemoryPool::init(size_t size)
 void* MemoryPool::allocate()
 {
     // 优先使用空闲链表中的内存槽
-    if (freeList_ != nullptr)
-    {
-        {
-            std::lock_guard<std::mutex> lock(mutexForFreeList_);
-            if (freeList_ != nullptr)
-            {
-                Slot* temp = freeList_;
-                freeList_ = freeList_->next;
-                return temp;
-            }
-        }
-    }
+    Slot* slot = popFreeList();
+    if (slot != nullptr)
+        return slot;
+    // if (freeList_ != nullptr)
+    // {
+    //     {
+    //         std::lock_guard<std::mutex> lock(mutexForFreeList_);
+    //         if (freeList_ != nullptr)
+    //         {
+    //             Slot* temp = freeList_;
+    //             freeList_ = freeList_->next;
+    //             return temp;
+    //         }
+    //     }
+    // }
 
     Slot* temp;
     {   
@@ -65,13 +73,17 @@ void* MemoryPool::allocate()
 
 void MemoryPool::deallocate(void* ptr)
 {
-    if (ptr)
-    {
-        // 回收内存，将内存通过头插法插入到空闲链表中
-        std::lock_guard<std::mutex> lock(mutexForFreeList_);
-        reinterpret_cast<Slot*>(ptr)->next = freeList_;
-        freeList_ = reinterpret_cast<Slot*>(ptr);
-    }
+    if (!ptr) return;
+
+    Slot* slot = reinterpret_cast<Slot*>(ptr);
+    pushFreeList(slot);
+    // if (ptr)
+    // {
+    //     // 回收内存，将内存通过头插法插入到空闲链表中
+    //     std::lock_guard<std::mutex> lock(mutexForFreeList_);
+    //     reinterpret_cast<Slot*>(ptr)->next = freeList_;
+    //     freeList_ = reinterpret_cast<Slot*>(ptr);
+    // }
 }
 
 void MemoryPool::allocateNewBlock()
@@ -98,6 +110,52 @@ size_t MemoryPool::padPointer(char* p, size_t align)
     // align 是槽大小
     return (align - reinterpret_cast<size_t>(p)) % align;
 }
+
+// 实现无锁入队操作
+bool MemoryPool::pushFreeList(Slot* slot)
+{
+    while (true)
+    {
+        // 获取当前头节点
+        Slot* oldHead = freeList_.load(std::memory_order_relaxed);
+        // 将新节点的 next 指向当前头节点
+        slot->next.store(oldHead, std::memory_order_relaxed);
+
+        // 尝试将新节点设置为头节点
+        if (freeList_.compare_exchange_weak(oldHead, slot,
+         std::memory_order_release, std::memory_order_relaxed))
+        {
+            return true;
+        }
+        // 失败：说明另一个线程可能已经修改了 freeList_
+        // CAS 失败则重试
+    }
+}
+
+// 实现无锁出队操作
+Slot* MemoryPool::popFreeList()
+{
+    while (true)
+    {
+        Slot* oldHead = freeList_.load(std::memory_order_relaxed);
+        if (oldHead == nullptr)
+            return nullptr; // 队列为空
+
+        // 获取下一个节点
+        Slot* newHead = oldHead->next.load(std::memory_order_relaxed);
+
+        // 尝试更新头结点
+        // 原子性地尝试将 freeList_ 从 oldHead 更新为 newHead
+        if (freeList_.compare_exchange_weak(oldHead, newHead,
+         std::memory_order_acquire, std::memory_order_relaxed))
+        {
+            return oldHead;
+        }
+        // 失败：说明另一个线程可能已经修改了 freeList_
+        // CAS 失败则重试
+    }
+}
+
 
 void HashBucket::initMemoryPool()
 {

@@ -2,7 +2,7 @@
 #include <thread>
 #include <vector>
 
-#include "MemoryPool.h"
+#include "../include/MemoryPool.h"
 
 using namespace memoryPool;
 

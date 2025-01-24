@@ -1,0 +1,6 @@
+/home/nowcoder/memory-pool/memoryPool/memory-pool/v3/build/CMakeFiles/rebuild_cache.dir
+/home/nowcoder/memory-pool/memoryPool/memory-pool/v3/build/CMakeFiles/edit_cache.dir
+/home/nowcoder/memory-pool/memoryPool/memory-pool/v3/build/CMakeFiles/perf.dir
+/home/nowcoder/memory-pool/memoryPool/memory-pool/v3/build/CMakeFiles/test.dir
+/home/nowcoder/memory-pool/memoryPool/memory-pool/v3/build/CMakeFiles/unit_test.dir
+/home/nowcoder/memory-pool/memoryPool/memory-pool/v3/build/CMakeFiles/perf_test.dir

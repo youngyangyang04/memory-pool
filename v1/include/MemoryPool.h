@@ -1,5 +1,6 @@
 #pragma once 
 
+#include <atomic>
 #include <cassert>
 #include <cstdint>
 #include <iostream>
@@ -17,7 +18,7 @@ namespace memoryPool
    所以这个槽结构体的sizeof 不是实际的槽大小 */
 struct Slot 
 {
-    Slot* next;
+    std::atomic<Slot*> next; // 原子指针
 };
 
 class MemoryPool
@@ -34,17 +35,19 @@ private:
     void allocateNewBlock();
     size_t padPointer(char* p, size_t align);
 
+    // 使用CAS操作进行无锁入队和出队
+    bool pushFreeList(Slot* slot);
+    Slot* popFreeList();
 private:
-    int        BlockSize_; // 内存块大小
-    int        SlotSize_; // 槽大小
-    Slot*      firstBlock_; // 指向内存池管理的首个实际内存块
-    Slot*      curSlot_; // 指向当前未被使用过的槽
-    Slot*      freeList_; // 指向空闲的槽(被使用过后又被释放的槽)
-    Slot*      lastSlot_; // 作为当前内存块中最后能够存放元素的位置标识(超过该位置需申请新的内存块)
-    std::mutex mutexForFreeList_; // 保证freeList_在多线程中操作的原子性
-    std::mutex mutexForBlock_; // 保证多线程情况下避免不必要的重复开辟内存导致的浪费行为
+    int                 BlockSize_; // 内存块大小
+    int                 SlotSize_; // 槽大小
+    Slot*               firstBlock_; // 指向内存池管理的首个实际内存块
+    Slot*               curSlot_; // 指向当前未被使用过的槽
+    std::atomic<Slot*>  freeList_; // 指向空闲的槽(被使用过后又被释放的槽)
+    Slot*               lastSlot_; // 作为当前内存块中最后能够存放元素的位置标识(超过该位置需申请新的内存块)
+    //std::mutex          mutexForFreeList_; // 保证freeList_在多线程中操作的原子性
+    std::mutex          mutexForBlock_; // 保证多线程情况下避免不必要的重复开辟内存导致的浪费行为
 };
-
 
 class HashBucket
 {

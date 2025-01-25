@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/perf_test.dir/src/CentralCache.cpp.o CMakeFiles/perf_test.dir/src/PageCache.cpp.o CMakeFiles/perf_test.dir/src/ThreadCache.cpp.o CMakeFiles/perf_test.dir/tests/PerformanceTest.cpp.o -o perf_test  -lpthread 

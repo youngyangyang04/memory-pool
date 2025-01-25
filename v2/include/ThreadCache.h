@@ -1,7 +1,7 @@
 #pragma once
 #include "Common.h"
 
-namespace memoryPool 
+namespace Kama_memoryPool 
 {
 
 // 线程本地缓存
@@ -22,8 +22,6 @@ private:
     void* fetchFromCentralCache(size_t index);
     // 归还内存到中心缓存
     void returnToCentralCache(void* start, size_t size, size_t bytes);
-    // 计算批量获取内存块的数量
-    size_t getBatchNum(size_t size);
 private:
     // 每个线程的自由链表数组
     std::array<void*, FREE_LIST_SIZE> freeList_;    

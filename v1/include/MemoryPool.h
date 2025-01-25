@@ -7,7 +7,7 @@
 #include <memory>
 #include <mutex>
 
-namespace memoryPool
+namespace Kama_memoryPool
 {
 #define MEMORY_POOL_NUM 64
 #define SLOT_BASE_SIZE 8

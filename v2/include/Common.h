@@ -3,7 +3,7 @@
 #include <atomic>
 #include <array>
 
-namespace memoryPool 
+namespace Kama_memoryPool 
 {
 // 对齐数和大小定义
 constexpr size_t ALIGNMENT = 8;

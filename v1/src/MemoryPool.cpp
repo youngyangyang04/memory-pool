@@ -1,6 +1,6 @@
 #include "../include/MemoryPool.h"
 
-namespace memoryPool 
+namespace Kama_memoryPool 
 {
 MemoryPool::MemoryPool(size_t BlockSize)
     : BlockSize_ (BlockSize)
@@ -41,18 +41,6 @@ void* MemoryPool::allocate()
     Slot* slot = popFreeList();
     if (slot != nullptr)
         return slot;
-    // if (freeList_ != nullptr)
-    // {
-    //     {
-    //         std::lock_guard<std::mutex> lock(mutexForFreeList_);
-    //         if (freeList_ != nullptr)
-    //         {
-    //             Slot* temp = freeList_;
-    //             freeList_ = freeList_->next;
-    //             return temp;
-    //         }
-    //     }
-    // }
 
     Slot* temp;
     {   
@@ -77,13 +65,6 @@ void MemoryPool::deallocate(void* ptr)
 
     Slot* slot = reinterpret_cast<Slot*>(ptr);
     pushFreeList(slot);
-    // if (ptr)
-    // {
-    //     // 回收内存，将内存通过头插法插入到空闲链表中
-    //     std::lock_guard<std::mutex> lock(mutexForFreeList_);
-    //     reinterpret_cast<Slot*>(ptr)->next = freeList_;
-    //     freeList_ = reinterpret_cast<Slot*>(ptr);
-    // }
 }
 
 void MemoryPool::allocateNewBlock()

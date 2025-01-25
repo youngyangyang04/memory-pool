@@ -1,7 +1,7 @@
 #pragma once
 #include "ThreadCache.h"
 
-namespace memoryPool
+namespace Kama_memoryPool
 {
 
 class MemoryPool

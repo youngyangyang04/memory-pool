@@ -3,7 +3,7 @@
 #include <map>
 #include <mutex>
 
-namespace memoryPool
+namespace Kama_memoryPool
 {
 
 class PageCache

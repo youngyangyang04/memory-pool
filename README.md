@@ -46,3 +46,26 @@ make clean
 ```
 ./可执行文件名
 ```  
+## 测试结果
+### v1
+#### 单个线程下的测试情况：
+![alt text](images/v1-oneThread.png)
+#### 两个线程下的测试情况：
+![alt text](images/v1-twoThread.png)
+
+#### 五个线程下的测试情况：
+![alt text](images/v1-fiveThread.png)
+通过上述测试结果大家可以看出该内存池的性能甚至不如直接使用系统调用 malloc 和 free，所以就有了内存池v2、v3。
+
+### v2
+#### 功能测试结果
+![alt text](images/v2-functionalTest.png)
+#### 性能测试结果
+![alt text](images/v2-performanceTest.png)
+
+### v3
+#### 功能测试结果
+![alt text](images/v3-functionalTest.png)
+#### 性能测试结果
+测试结果表明内存池v3的性能要略好于内存池版本2。
+![alt text](images/v3-performanceTest.png)

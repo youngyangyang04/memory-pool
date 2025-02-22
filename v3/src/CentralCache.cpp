@@ -31,7 +31,8 @@ void* CentralCache::fetchRange(size_t index, size_t batchNum)
         {
             // 如果中心缓存为空，从页缓存获取新的内存块
             size_t size = (index + 1) * ALIGNMENT;
-            result = fetchFromPageCache(size);
+            size_t numPages;
+            result = fetchFromPageCache(size, batchNum, numPages);
 
             if (!result)
             {
@@ -40,8 +41,8 @@ void* CentralCache::fetchRange(size_t index, size_t batchNum)
             }
 
             // 将从PageCache获取的内存块切分成小块
-            char* start = static_cast<char*>(result);
-            size_t totalBlocks = (SPAN_PAGES * PageCache::PAGE_SIZE) / size;
+            char *start = static_cast<char *>(result);
+            size_t totalBlocks = numPages * PageCache::PAGE_SIZE / size;
             size_t allocBlocks = std::min(batchNum, totalBlocks);
             
             // 构建返回给ThreadCache的内存块链表
@@ -133,22 +134,24 @@ void CentralCache::returnRange(void* start, size_t size, size_t index)
     locks_[index].clear(std::memory_order_release);
 }
 
-void* CentralCache::fetchFromPageCache(size_t size)
+void* CentralCache::fetchFromPageCache(size_t size, size_t batchNums, size_t &outNumPages)
 {   
     // 1. 计算实际需要的页数
-    size_t numPages = (size + PageCache::PAGE_SIZE - 1) / PageCache::PAGE_SIZE;
+    size_t totalSize = batchNums * size;
+    size_t numPages = (totalSize + PageCache::PAGE_SIZE - 1) / PageCache::PAGE_SIZE;
 
     // 2. 根据大小决定分配策略
-    if (size <= SPAN_PAGES * PageCache::PAGE_SIZE) 
+    if (totalSize <= SPAN_PAGES * PageCache::PAGE_SIZE) 
     {
         // 小于等于32KB的请求，使用固定8页
-        return PageCache::getInstance().allocateSpan(SPAN_PAGES);
+        outNumPages = SPAN_PAGES;
     } 
     else 
     {
         // 大于32KB的请求，按实际需求分配
-        return PageCache::getInstance().allocateSpan(numPages);
+        outNumPages = numPages;
     }
+    return PageCache::getInstance().allocateSpan(outNumPages);
 }
 
 } // namespace memoryPool

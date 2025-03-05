@@ -20,6 +20,9 @@ void* ThreadCache::allocate(size_t size)
 
     size_t index = SizeClass::getIndex(size);
 
+    // 更新自由链表大小
+    freeListSize_[index]--;
+
     // 检查线程本地自由链表
     // 如果 freeList_[index] 不为空，表示该链表中有可用内存块
     if (void* ptr = freeList_[index])
@@ -45,6 +48,23 @@ void ThreadCache::deallocate(void* ptr, size_t size)
     // 插入到线程本地自由链表
     *reinterpret_cast<void**>(ptr) = freeList_[index];
     freeList_[index] = ptr;
+
+     // 更新自由链表大小
+    freeListSize_[index]++; // 增加对应大小类的自由链表大小
+
+    // 判断是否需要将部分内存回收给中心缓存
+    if (shouldReturnToCentralCache(index))
+    {
+        returnToCentralCache(freeList_[index], size, size);
+    }
+}
+
+// 判断是否需要将内存回收给中心缓存
+bool ThreadCache::shouldReturnToCentralCache(size_t index)
+{
+    // 设定阈值，例如：当自由链表的大小超过一定数量时
+    size_t threshold = 64; // 例如，64个内存块
+    return (freeListSize_[index] > threshold);
 }
 
 void* ThreadCache::fetchFromCentralCache(size_t index)
@@ -55,6 +75,9 @@ void* ThreadCache::fetchFromCentralCache(size_t index)
     // 从中心缓存批量获取内存
     void* start = CentralCache::getInstance().fetchRange(index, batchNum);
     if (!start) return nullptr;
+
+    // 更新自由链表大小
+    freeListSize_[index] += batchNum; // 增加对应大小类的自由链表大小
 
     // 取一个返回，其余放入线程本地自由链表
     void* result = start;
@@ -93,6 +116,9 @@ void ThreadCache::returnToCentralCache(void* start, size_t size, size_t bytes)
 
     // 更新ThreadCache的空闲链表
     freeList_[index] = start;
+
+    // 更新自由链表大小
+    freeListSize_[index] -= returnNum; // 减少对应大小类的自由链表大小
 
     // 将剩余部分返回给CentralCache
     if (returnNum > 0)

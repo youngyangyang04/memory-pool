@@ -55,7 +55,7 @@ void ThreadCache::deallocate(void* ptr, size_t size)
     // 判断是否需要将部分内存回收给中心缓存
     if (shouldReturnToCentralCache(index))
     {
-        returnToCentralCache(freeList_[index], size, size);
+        returnToCentralCache(freeList_[index], size);
     }
 }
 
@@ -89,42 +89,54 @@ void* ThreadCache::fetchFromCentralCache(size_t index)
     return result;
 }
 
-void ThreadCache::returnToCentralCache(void* start, size_t size, size_t bytes)
+void ThreadCache::returnToCentralCache(void* start, size_t size)
 {
     // 根据大小计算对应的索引
     size_t index = SizeClass::getIndex(size);
 
-    // 计算要归还内存块数量
-    size_t batchNum = size / bytes;
-    if (batchNum <= 1) return; // 如果只有一个块，则不归还
+    // 获取对齐后的实际块大小
+    size_t alignedSize = SizeClass::roundUp(size);
 
-    // 将内存块串成链表
-    char* current = static_cast<char*>(start);
-    // 删除未使用的变量 end
-    // char* end = current + (batchNum - 1) * bytes;
+    // 计算要归还内存块数量
+    size_t batchNum = freeListSize_[index];
+    if (batchNum <= 1) return; // 如果只有一个块，则不归还
 
     // 保留一部分在ThreadCache中（比如保留1/4）
     size_t keepNum = std::max(batchNum / 4, size_t(1));
     size_t returnNum = batchNum - keepNum;
 
-    // 计算要保留的最后一个节点位置
-    char* splitNode = current + (keepNum - 1) * bytes;
-
-    // 将要返回的部分和要保留的部分断开
-    void* nextNode = *reinterpret_cast<void**>(splitNode);
-    *reinterpret_cast<void**>(splitNode) = nullptr; // 断开连接
-
-    // 更新ThreadCache的空闲链表
-    freeList_[index] = start;
-
-    // 更新自由链表大小
-    freeListSize_[index] -= returnNum; // 减少对应大小类的自由链表大小
-
-    // 将剩余部分返回给CentralCache
-    if (returnNum > 0)
+    // 将内存块串成链表
+    char* current = static_cast<char*>(start);
+    // 使用对齐后的大小计算分割点
+    char* splitNode = current;
+    for (size_t i = 0; i < keepNum - 1; ++i) 
     {
-        char* returnStart = static_cast<char*>(nextNode);
-        CentralCache::getInstance().returnRange(returnStart, returnNum * bytes, index);
+        splitNode = reinterpret_cast<char*>(*reinterpret_cast<void**>(splitNode));
+        if (splitNode == nullptr) 
+        {
+            // 如果链表提前结束，更新实际的返回数量
+            returnNum = batchNum - (i + 1);
+            break;
+        }
+    }
+
+    if (splitNode != nullptr) 
+    {
+        // 将要返回的部分和要保留的部分断开
+        void* nextNode = *reinterpret_cast<void**>(splitNode);
+        *reinterpret_cast<void**>(splitNode) = nullptr; // 断开连接
+
+        // 更新ThreadCache的空闲链表
+        freeList_[index] = start;
+
+        // 更新自由链表大小
+        freeListSize_[index] = keepNum;
+
+        // 将剩余部分返回给CentralCache
+        if (returnNum > 0 && nextNode != nullptr)
+        {
+            CentralCache::getInstance().returnRange(nextNode, returnNum * alignedSize, index);
+        }
     }
 }
 

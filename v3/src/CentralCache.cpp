@@ -119,10 +119,18 @@ void CentralCache::returnRange(void* start, size_t size, size_t index)
 
     try 
     {
-        // 将归还的内存块插入到中心缓存的链表头部
+        // 找到要归还的链表的最后一个节点
+        void* end = start;
+        size_t count = 1;
+        while (*reinterpret_cast<void**>(end) != nullptr && count < size) {
+            end = *reinterpret_cast<void**>(end);
+            count++;
+        }
+
+        // 将归还的链表连接到中心缓存的链表头部
         void* current = centralFreeList_[index].load(std::memory_order_relaxed);
-        *reinterpret_cast<void**>(start) = current;
-        centralFreeList_[index].store(start, std::memory_order_release);
+        *reinterpret_cast<void**>(end) = current;  // 将原链表头接到归还链表的尾部
+        centralFreeList_[index].store(start, std::memory_order_release);  // 将归还的链表头设为新的链表头
     }
     catch (...) 
     {

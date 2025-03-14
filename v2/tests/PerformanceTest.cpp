@@ -41,21 +41,22 @@ public:
     static void warmup() 
     {
         std::cout << "Warming up memory systems...\n";
-        std::vector<void*> warmupPtrs;
+        // 使用 pair 来存储指针和对应的大小
+        std::vector<std::pair<void*, size_t>> warmupPtrs;
         
         // 预热内存池
         for (int i = 0; i < 1000; ++i) 
         {
             for (size_t size : {32, 64, 128, 256, 512}) {
                 void* p = MemoryPool::allocate(size);
-                warmupPtrs.push_back(p);
+                warmupPtrs.emplace_back(p, size);  // 存储指针和对应的大小
             }
         }
         
         // 释放预热内存
-        for (void* ptr : warmupPtrs) 
+        for (const auto& [ptr, size] : warmupPtrs) 
         {
-            MemoryPool::deallocate(ptr, 32);  // 使用默认大小
+            MemoryPool::deallocate(ptr, size);  // 使用实际分配的大小进行释放
         }
         
         std::cout << "Warmup complete.\n\n";

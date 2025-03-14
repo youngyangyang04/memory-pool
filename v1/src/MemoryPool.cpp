@@ -118,13 +118,22 @@ Slot* MemoryPool::popFreeList()
 {
     while (true)
     {
-        Slot* oldHead = freeList_.load(std::memory_order_relaxed);
+        Slot* oldHead = freeList_.load(std::memory_order_acquire);
         if (oldHead == nullptr)
             return nullptr; // 队列为空
 
-        // 获取下一个节点
-        Slot* newHead = oldHead->next.load(std::memory_order_relaxed);
-
+        // 在访问 newHead 之前再次验证 oldHead 的有效性
+        Slot* newHead = nullptr;
+        try
+        {
+            newHead = oldHead->next.load(std::memory_order_relaxed);
+        }
+        catch(...)
+        {
+            // 如果返回失败，则continue重新尝试申请内存
+            continue;
+        }
+        
         // 尝试更新头结点
         // 原子性地尝试将 freeList_ 从 oldHead 更新为 newHead
         if (freeList_.compare_exchange_weak(oldHead, newHead,

@@ -32,7 +32,7 @@ private:
         }
     }
     // 从页缓存获取内存
-    void* fetchFromPageCache(size_t size);
+    void *fetchFromPageCache(size_t size, size_t batchNums, size_t &outNumPages);
 
 private:
     // 中心缓存的自由链表

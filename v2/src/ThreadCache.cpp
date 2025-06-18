@@ -63,7 +63,7 @@ void ThreadCache::deallocate(void* ptr, size_t size)
 bool ThreadCache::shouldReturnToCentralCache(size_t index)
 {
     // 设定阈值，例如：当自由链表的大小超过一定数量时
-    size_t threshold = 64; // 例如，64个内存块
+    size_t threshold = 256; 
     return (freeListSize_[index] > threshold);
 }
 

@@ -81,8 +81,6 @@ void MemoryPool::allocateNewBlock()
 
     // 超过该标记位置，则说明该内存块已无内存槽可用，需向系统申请新的内存块
     lastSlot_ = reinterpret_cast<Slot*>(reinterpret_cast<size_t>(newBlock) + BlockSize_ - SlotSize_ + 1);
-
-    freeList_ = nullptr;
 }
 
 // 让指针对齐到槽大小的倍数位置

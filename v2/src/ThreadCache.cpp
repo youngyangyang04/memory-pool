@@ -20,7 +20,7 @@ void* ThreadCache::allocate(size_t size)
 
     size_t index = SizeClass::getIndex(size);
     
-    // 更新自由链表大小
+    // 更新对应自由链表的长度计数
     freeListSize_[index]--;
     
     // 检查线程本地自由链表
@@ -49,8 +49,8 @@ void ThreadCache::deallocate(void* ptr, size_t size)
     *reinterpret_cast<void**>(ptr) = freeList_[index];
     freeList_[index] = ptr;
 
-    // 更新自由链表大小
-    freeListSize_[index]++; // 增加对应大小类的自由链表大小
+    // 更新对应自由链表的长度计数
+    freeListSize_[index]++; 
 
     // 判断是否需要将部分内存回收给中心缓存
     if (shouldReturnToCentralCache(index))

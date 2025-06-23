@@ -145,5 +145,4 @@ void ThreadCache::returnToCentralCache(void* start, size_t size)
     }
 }
 
-
 } // namespace memoryPool

@@ -94,6 +94,9 @@ void* CentralCache::fetchRange(size_t index)
                 );
                 
                 // 使用无锁方式记录span信息
+                // 做记录是为了将中心缓存多余内存块归还给页缓存做准备。考虑点：
+                // 1.CentralCache 管理的是小块内存，这些内存可能不连续
+                // 2.PageCache 的 deallocateSpan 要求归还连续的内存
                 size_t trackerIndex = spanCount_++;
                 if (trackerIndex < spanTrackers_.size())
                 {

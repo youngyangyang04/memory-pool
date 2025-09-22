@@ -21,13 +21,15 @@ void* ThreadCache::allocate(size_t size)
     size_t index = SizeClass::getIndex(size);
 
     // 更新自由链表大小
-    freeListSize_[index]--;
+    // freeListSize_[index]--;
+
 
     // 检查线程本地自由链表
     // 如果 freeList_[index] 不为空，表示该链表中有可用内存块
     if (void* ptr = freeList_[index])
     {
         freeList_[index] = *reinterpret_cast<void**>(ptr); // 将freeList_[index]指向的内存块的下一个内存块地址（取决于内存块的实现）
+        freeListSize_[index]--;
         return ptr;
     }
 
@@ -160,7 +162,8 @@ size_t ThreadCache::getBatchNum(size_t size)
     size_t maxNum = std::max(size_t(1), MAX_BATCH_SIZE / size);
 
     // 取最小值，但确保至少返回1
-    return std::max(sizeof(1), std::min(maxNum, baseNum));
+    // return std::max(sizeof(1), std::min(maxNum, baseNum)); 可能写错了，应该最少用1个
+    return std::max(size_t(1), std::min(maxNum, baseNum));
 }
 
 } // namespace memoryPool

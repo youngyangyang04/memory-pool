@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 编译选项
-add_compile_options(-Wall -O2)
+add_compile_options(-Wall -O0)
 
 # 查找pthread库
 find_package(Threads REQUIRED)

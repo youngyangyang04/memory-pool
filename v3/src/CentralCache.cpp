@@ -9,7 +9,7 @@ namespace Kama_memoryPool
 // 每次从PageCache获取span大小（以页为单位）
 static const size_t SPAN_PAGES = 8;
 
-void* CentralCache::fetchRange(size_t index, size_t batchNum)
+void* CentralCache::fetchRange(size_t index, size_t &batchNum)
 {
     // 索引检查，当索引大于等于FREE_LIST_SIZE时，说明申请内存过大应直接向系统申请
     if (index >= FREE_LIST_SIZE || batchNum == 0) 
@@ -86,7 +86,7 @@ void* CentralCache::fetchRange(size_t index, size_t batchNum)
                 current = *reinterpret_cast<void**>(current);
                 count++;
             }
-
+            batchNum =count;
             if (prev) // 当前centralFreeList_[index]链表上的内存块大于batchNum时需要用到 
             {
                 *reinterpret_cast<void**>(prev) = nullptr;

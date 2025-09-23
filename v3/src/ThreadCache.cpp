@@ -77,7 +77,7 @@ void* ThreadCache::fetchFromCentralCache(size_t index)
     if (!start) return nullptr;
 
     // 更新自由链表大小
-    freeListSize_[index] += batchNum; // 增加对应大小类的自由链表大小
+    freeListSize_[index] += batchNum-1; // 增加对应大小类的自由链表大小
 
     // 取一个返回，其余放入线程本地自由链表
     void* result = start;

@@ -87,7 +87,8 @@ void MemoryPool::allocateNewBlock()
 size_t MemoryPool::padPointer(char* p, size_t align)
 {
     // align 是槽大小
-    return align - (reinterpret_cast<size_t>(p) % align);
+    size_t rem = (reinterpret_cast<size_t>(p) % align);
+    return rem == 0 ? 0 : (align - rem);
 }
 
 // 实现无锁入队操作
